@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#d4edda"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="חשבונות דירה"/>
+<title>ניהול חשבונות דירה</title>
+<link rel="manifest" href="manifest.json"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;direction:rtl;background:#f4faf6;min-height:100vh;max-width:480px;margin:0 auto;}
+.app{display:flex;flex-direction:column;min-height:100vh;background:#f4faf6;}
+
+/* topbar */
+.topbar{background:#d4edda;padding:14px 20px 12px;border-bottom:0.5px solid #b8dfc4;flex-shrink:0;position:sticky;top:0;z-index:10;}
+.topbar-title{font-size:17px;font-weight:600;color:#1a5c35;}
+.topbar-meta{display:flex;align-items:center;gap:6px;margin-top:3px;}
+.topbar-label{font-size:11px;color:#3a8a5a;}
+.topbar-sep{font-size:11px;color:#9abfaa;}
+.topbar-period{font-size:12px;font-weight:600;color:#1a5c35;}
+
+/* nav tabs */
+.nav-tabs{display:flex;background:#e8f5ec;border-bottom:0.5px solid #b8dfc4;flex-shrink:0;}
+.nav-tab{flex:1;padding:11px;text-align:center;font-size:13px;color:#4a7a5a;cursor:pointer;border-bottom:2px solid transparent;font-weight:500;transition:all 0.15s;}
+.nav-tab.active{color:#1a5c35;border-bottom:2px solid #2d8a52;background:#f0faf3;}
+
+/* content */
+.content{padding:14px;display:flex;flex-direction:column;gap:12px;flex:1;padding-bottom:80px;}
+.hidden{display:none!important;}
+.sec-lbl{font-size:10px;color:#5a8a6a;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:2px;}
+
+/* bill card */
+.bc{background:#fff;border-radius:16px;border:0.5px solid #c8e6cc;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
+.bc.done{border-color:#2d8a52;}
+.bc-head{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;}
+.bc-left{display:flex;align-items:center;gap:10px;}
+.ic{width:34px;height:34px;border-radius:10px;background:#e8f5ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s;}
+.bc.done .ic{background:#1a5c35;}
+.bc.done .ic svg{stroke:white!important;}
+.bn{font-size:14px;font-weight:600;color:#1a1a1a;}
+.bs{font-size:11px;color:#9abfaa;margin-top:1px;}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;white-space:nowrap;}
+.pill.open{background:#f0faf3;border:1px solid #b8dfc4;color:#3a7a5a;}
+.pill.open:active{background:#d4edda;}
+.pill.closed{background:#1a5c35;color:white;cursor:default;}
+.pill svg{width:11px;height:11px;flex-shrink:0;}
+.bc-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:9px;}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;}
+.ir{display:flex;flex-direction:column;gap:4px;}
+.il{font-size:11px;color:#666;font-weight:500;}
+.if{background:#f0faf3;border:0.5px solid #b8dfc4;border-radius:8px;padding:8px 11px;font-size:15px;color:#1a1a1a;width:100%;-webkit-appearance:none;}
+.if:focus{outline:none;border-color:#2d8a52;background:#e8f5ec;}
+.if::placeholder{color:#b8d8c0;}
+.hint{font-size:11px;color:#9abfaa;}
+.rr{display:flex;justify-content:space-between;font-size:12px;color:#666;padding:2px 0;}
+.rr span:last-child{font-weight:600;color:#1a1a1a;}
+.divl{height:0.5px;background:#e0f0e4;margin:2px 0;}
+.sp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;}
+.spane{border-radius:10px;padding:10px 12px;}
+.spane.m{background:#eaf6ff;border:0.5px solid #b8d8f0;}
+.spane.u{background:#fffbf0;border:0.5px solid #f0d8a0;}
+.st{font-size:10px;font-weight:600;margin-bottom:3px;}
+.spane.m .st{color:#1a5a8a;}
+.spane.u .st{color:#7a5a00;}
+.sa{font-size:15px;font-weight:600;}
+.spane.m .sa{color:#1a5a8a;}
+.spane.u .sa{color:#7a5a00;}
+
+/* summary block */
+.sum{border-radius:16px;overflow:hidden;border:0.5px solid #b8dfc4;}
+.sum-head{background:#1a5c35;padding:15px 16px;color:white;}
+.sum-lbl{font-size:10px;opacity:0.7;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:9px;}
+.sum-totals{display:flex;justify-content:space-between;}
+.sum-side-lbl{font-size:11px;opacity:0.7;margin-bottom:2px;}
+.sum-side-amt{font-size:22px;font-weight:700;}
+.sum-body{background:#fff;padding:13px 14px;display:flex;flex-direction:column;gap:9px;}
+.pb{border-radius:12px;padding:12px 13px;}
+.pb.u{background:#fffbf0;border:0.5px solid #f0d8a0;}
+.pb.mine{background:#f0f7ff;border:0.5px solid #b8d8f0;}
+.pb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.pb-lbl{font-size:12px;font-weight:600;}
+.pb.u .pb-lbl{color:#7a5a00;}
+.pb.mine .pb-lbl{color:#1a5a8a;}
+.pb-amt{font-size:18px;font-weight:700;}
+.pb.u .pb-amt{color:#7a5a00;}
+.pb.mine .pb-amt{color:#1a5a8a;}
+.pbr{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.pbrow{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
+.pb.u .pbrow{color:#a07a20;}
+.pb.mine .pbrow{color:#4a8ab0;}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot.g{background:#1a5c35;}
+.dot.x{background:#d0d0d0;}
+.rl{display:flex;align-items:center;gap:5px;}
+.unit-action{display:flex;align-items:center;justify-content:space-between;background:#fffdf5;border:0.5px solid #f0d8a0;border-radius:10px;padding:9px 11px 9px 13px;}
+.ua-text{display:flex;flex-direction:column;gap:1px;}
+.ua-title{font-size:11px;font-weight:600;color:#7a5a00;}
+.ua-sub{font-size:10px;color:#b08a30;}
+.ua-btn{background:#1a5c35;color:white;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:600;cursor:pointer;}
+.ua-btn:active{background:#155228;}
+.ua-confirm{display:flex;align-items:center;gap:6px;font-size:11px;color:#1a5c35;font-weight:600;}
+.ua-confirm svg{width:14px;height:14px;stroke:#1a5c35;}
+
+/* history */
+.hcard{background:#fff;border-radius:16px;border:0.5px solid #c8e6cc;overflow:hidden;}
+.hcard-top{padding:14px 16px 10px;}
+.hperiod{font-size:14px;font-weight:600;color:#1a1a1a;}
+.hgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:0 12px 12px;}
+.hpane{border-radius:12px;padding:11px 12px;}
+.hpane.unit{background:#fffbf0;border:0.5px solid #f0d8a0;}
+.hpane.mine{background:#f0f7ff;border:0.5px solid #b8d8f0;}
+.hpane-label{font-size:10px;font-weight:600;margin-bottom:3px;}
+.hpane.unit .hpane-label{color:#7a5a00;}
+.hpane.mine .hpane-label{color:#1a5a8a;}
+.hpane-amount{font-size:18px;font-weight:700;margin-bottom:6px;}
+.hpane.unit .hpane-amount{color:#7a5a00;}
+.hpane.mine .hpane-amount{color:#1a5a8a;}
+.hrows{display:flex;flex-direction:column;gap:3px;padding-top:7px;border-top:0.5px solid;}
+.hpane.unit .hrows{border-color:#f0d8a0;}
+.hpane.mine .hrows{border-color:#b8d8f0;}
+.hrow{display:flex;justify-content:space-between;align-items:center;font-size:10px;}
+.hpane.unit .hrow{color:#a07a20;}
+.hpane.mine .hrow{color:#4a8ab0;}
+.status-row{padding:0 12px 12px;}
+.chip-paid{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;background:#e8f5ec;color:#1a5c35;}
+.chip-paid svg{width:11px;height:11px;stroke:#1a5c35;}
+.pending-block{display:flex;align-items:center;justify-content:space-between;background:#fffbf0;border:0.5px solid #f0d8a0;border-radius:10px;padding:9px 11px 9px 13px;}
+.pending-title{font-size:11px;font-weight:600;color:#7a5a00;}
+.pending-sub{font-size:10px;color:#b08a30;margin-top:1px;}
+.pending-action{background:#1a5c35;color:white;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:600;cursor:pointer;}
+.pending-action:active{background:#155228;}
+.empty-state{text-align:center;padding:48px 20px;color:#9abfaa;font-size:14px;}
+
+/* loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#5a8a6a;font-size:14px;}
+
+/* bottom nav */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;background:#fff;border-top:0.5px solid #c8e6cc;z-index:10;}
+.ni{flex:1;padding:10px 0 8px;text-align:center;cursor:pointer;}
+.ni svg{width:22px;height:22px;display:block;margin:0 auto 3px;}
+.ni span{font-size:10px;color:#5a8a6a;display:block;font-weight:500;}
+.ni.active span{color:#1a5c35;font-weight:600;}
+
+/* toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a5c35;color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:100;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-title">ניהול חשבונות דירה</div>
+    <div class="topbar-meta">
+      <span class="topbar-label">חודשים</span>
+      <span class="topbar-sep">·</span>
+      <span class="topbar-period" id="topbar-period">טוען...</span>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" id="tab-entry" onclick="showTab('entry')">הזנת חשבון</div>
+    <div class="nav-tab" id="tab-hist" onclick="showTab('hist')">היסטוריה</div>
+  </div>
+
+  <!-- הזנה -->
+  <div class="content" id="sec-entry">
+    <div class="sec-lbl">חשמל</div>
+    <div class="bc" id="bc-elec">
+      <div class="bc-head">
+        <div class="bc-left">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M9 2L4 9h5l-2 5 7-8H9l2-4z"/></svg></div>
+          <div><div class="bn">חשמל</div><div class="bs">דו-חודשי</div></div>
+        </div>
+        <button class="pill open" id="pill-elec" onclick="togglePaid('elec')">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם
+        </button>
+      </div>
+      <div class="bc-body">
+        <div class="two">
+          <div class="ir"><div class="il">קריאת מונה נוכחית</div><input class="if" placeholder="קוט״ש" type="number" inputmode="decimal" id="mc" oninput="ce()"/></div>
+          <div class="ir"><div class="il">סה"כ חשבונית</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="eb" oninput="ce()"/></div>
+        </div>
+        <div class="hint" id="prev-hint">קריאה קודמת: טוען...</div>
+        <div class="rr"><span>צריכת היחידה</span><span id="kwh">–</span></div>
+        <div class="divl"></div>
+        <div class="sp">
+          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="em">–</div></div>
+          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="eu">–</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-lbl" id="lbl-v1"></div>
+    <div class="bc" id="bc-v1">
+      <div class="bc-head">
+        <div class="bc-left">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M1 15h14"/><path d="M2 15V7l4-4 4 4v8"/><path d="M10 15V9h4v6"/><rect x="5" y="11" width="2" height="4"/></svg></div>
+          <div><div class="bn">ועד מקומי צופים</div><div class="bs" id="sub-v1"></div></div>
+        </div>
+        <button class="pill open" id="pill-v1" onclick="togglePaid('v1')">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם
+        </button>
+      </div>
+      <div class="bc-body">
+        <div class="two">
+          <div class="ir"><div class="il">שמירה</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1s" oninput="cv1()"/></div>
+          <div class="ir"><div class="il">מיסים</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1m" oninput="cv1()"/></div>
+          <div class="ir"><div class="il">מים א'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1a" oninput="cv1()"/></div>
+          <div class="ir"><div class="il">מים ב'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1b" oninput="cv1()"/></div>
+        </div>
+        <div class="rr"><span>סה"כ חשבונית</span><span id="v1t">–</span></div>
+        <div class="divl"></div>
+        <div class="sp">
+          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="v1mi">–</div></div>
+          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="v1u">–</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-lbl" id="lbl-v2"></div>
+    <div class="bc" id="bc-v2">
+      <div class="bc-head">
+        <div class="bc-left">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M1 15h14"/><path d="M2 15V7l4-4 4 4v8"/><path d="M10 15V9h4v6"/><rect x="5" y="11" width="2" height="4"/></svg></div>
+          <div><div class="bn">ועד מקומי צופים</div><div class="bs" id="sub-v2"></div></div>
+        </div>
+        <button class="pill open" id="pill-v2" onclick="togglePaid('v2')">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם
+        </button>
+      </div>
+      <div class="bc-body">
+        <div class="two">
+          <div class="ir"><div class="il">שמירה</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2s" oninput="cv2()"/></div>
+          <div class="ir"><div class="il">מיסים</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2m" oninput="cv2()"/></div>
+          <div class="ir"><div class="il">מים א'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2a" oninput="cv2()"/></div>
+          <div class="ir"><div class="il">מים ב'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2b" oninput="cv2()"/></div>
+        </div>
+        <div class="rr"><span>סה"כ חשבונית</span><span id="v2t">–</span></div>
+        <div class="divl"></div>
+        <div class="sp">
+          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="v2mi">–</div></div>
+          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="v2u">–</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">ארנונה וביוב</div>
+    <div class="bc" id="bc-ar">
+      <div class="bc-head">
+        <div class="bc-left">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M4 7V5h8v2"/><path d="M8 2v3"/><path d="M5 2h6"/><rect x="6" y="10" width="4" height="5"/></svg></div>
+          <div><div class="bn">ארנונה וביוב</div><div class="bs">דו-חודשי</div></div>
+        </div>
+        <button class="pill open" id="pill-ar" onclick="togglePaid('ar')">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם
+        </button>
+      </div>
+      <div class="bc-body">
+        <div class="two">
+          <div class="ir"><div class="il">ארנונה</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="aa" oninput="car()"/></div>
+          <div class="ir"><div class="il">ביוב ומים</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="ab" oninput="car()"/></div>
+        </div>
+        <div class="rr"><span>סה"כ חשבונית</span><span id="art">–</span></div>
+        <div class="divl"></div>
+        <div class="sp">
+          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="arm">–</div></div>
+          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="aru">–</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">סיכום סבב</div>
+    <div class="sum">
+      <div class="sum-head">
+        <div class="sum-lbl" id="sum-period-lbl"></div>
+        <div class="sum-totals">
+          <div><div class="sum-side-lbl">היחידה חייבת לי</div><div class="sum-side-amt" id="stu">₪ –</div></div>
+          <div style="text-align:left;"><div class="sum-side-lbl">הבית שלי</div><div class="sum-side-amt" id="stm">₪ –</div></div>
+        </div>
+      </div>
+      <div class="sum-body">
+        <div class="pb u">
+          <div class="pb-head"><span class="pb-lbl">תשלום מהיחידה</span><span class="pb-amt" id="pbu">₪ –</span></div>
+          <div class="pbr">
+            <div class="pbrow"><span>חשמל</span><span id="pu-e">–</span></div>
+            <div class="pbrow"><span>ועד צופים (×2)</span><span id="pu-v">–</span></div>
+            <div class="pbrow"><span>ארנונה וביוב</span><span id="pu-a">–</span></div>
+          </div>
+          <div id="unit-action-wrap">
+            <div class="unit-action">
+              <div class="ua-text"><div class="ua-title">ממתין לתשלום מהיחידה</div><div class="ua-sub" id="ua-sub">הזן נתונים לחישוב</div></div>
+              <button class="ua-btn" onclick="markUnitPaid()">שולם</button>
+            </div>
+          </div>
+        </div>
+        <div class="pb mine">
+          <div class="pb-head"><span class="pb-lbl">תשלומי הבית שלי</span><span class="pb-amt" id="pbm">₪ –</span></div>
+          <div class="pbr">
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-elec"></span>חשמל</div><span id="pm-e">–</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-v1"></span>ועד חודש 1</div><span id="pm-v1">–</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-v2"></span>ועד חודש 2</div><span id="pm-v2">–</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-ar"></span>ארנונה וביוב</div><span id="pm-a">–</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- היסטוריה -->
+  <div class="content hidden" id="sec-hist">
+    <div class="sec-lbl">סבבים קודמים</div>
+    <div id="hist-list"><div class="loading">טוען היסטוריה...</div></div>
+  </div>
+
+  <div class="bnav">
+    <div class="ni active" id="ni-entry" onclick="showTab('entry')">
+      <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="#1a5c35" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="#1a5c35" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>חשבון חדש</span>
+    </div>
+    <div class="ni" id="ni-hist" onclick="showTab('hist')">
+      <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="#5a8a6a" stroke-width="1.5"/><path d="M7 8h6M7 12h4" stroke="#5a8a6a" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>היסטוריה</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://pgerlxygrvkoppfpxnqn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZXJseHlncnZrb3BwZnB4bnFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwMDk4NTMsImV4cCI6MjA5MTU4NTg1M30.NgB7h80hdiM0tDZR-uoGgBn-kGnSDeJLYQronkIGcqk';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const HM = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+let csm = 0, csy = 2025;
+let prevReading = 0;
+let cycleId = null;
+let unitPaid = false;
+
+function per(m,y){const m2=(m+1)%12,y2=m===11?y+1:y;return HM[m]+' – '+HM[m2]+' '+y2;}
+function m1n(m,y){return HM[m]+' '+y;}
+function m2n(m,y){const m2=(m+1)%12,y2=m===11?y+1:y;return HM[m2]+' '+y2;}
+function f(n){return '₪ '+parseFloat(n).toFixed(2);}
+function ph(){return '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם';}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function updateLabels(){
+  const m=csm,y=csy,p=per(m,y);
+  document.getElementById('topbar-period').textContent=p;
+  document.getElementById('sum-period-lbl').textContent='סה"כ '+p;
+  document.getElementById('lbl-v1').textContent='ועד צופים — '+m1n(m,y);
+  document.getElementById('lbl-v2').textContent='ועד צופים — '+m2n(m,y);
+  document.getElementById('sub-v1').textContent=m1n(m,y);
+  document.getElementById('sub-v2').textContent=m2n(m,y);
+}
+
+function showTab(t){
+  ['entry','hist'].forEach(x=>{
+    document.getElementById('sec-'+x).classList.toggle('hidden',x!==t);
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+    document.getElementById('ni-'+x).classList.toggle('active',x===t);
+  });
+  if(t==='hist') loadHistory();
+}
+
+let euV=0,emV=0,v1uV=0,v1mV=0,v2uV=0,v2mV=0,aruV=0,armV=0;
+let paid={elec:false,v1:false,v2:false,ar:false};
+
+async function togglePaid(k){
+  paid[k]=!paid[k];
+  const pill=document.getElementById('pill-'+k);
+  const card=document.getElementById('bc-'+k);
+  const dot=document.getElementById('d-'+k);
+  if(paid[k]){
+    pill.className='pill closed';pill.innerHTML=ph();
+    card.classList.add('done');
+    if(dot)dot.className='dot g';
+    await saveBill(k);
+  } else {
+    pill.className='pill open';pill.innerHTML=ph();
+    card.classList.remove('done');
+    if(dot)dot.className='dot x';
+  }
+  if(paid.elec&&paid.v1&&paid.v2&&paid.ar) await finalizeCycle();
+}
+
+async function saveBill(k){
+  try {
+    if(k==='elec'){
+      const curr=parseFloat(document.getElementById('mc').value)||0;
+      const bill=parseFloat(document.getElementById('eb').value)||0;
+      await sb.from('electricity_readings').upsert({
+        cycle_month:csm,cycle_year:csy,
+        previous_reading:prevReading,current_reading:curr,
+        bill_amount:bill,paid_to_supplier:true
+      },{onConflict:'cycle_month,cycle_year'});
+    } else if(k==='v1'){
+      await sb.from('vaad_bills').upsert({
+        cycle_month:csm,cycle_year:csy,bill_month:csm,bill_year:csy,
+        shimira:parseFloat(document.getElementById('v1s').value)||0,
+        misim:parseFloat(document.getElementById('v1m').value)||0,
+        mayim_a:parseFloat(document.getElementById('v1a').value)||0,
+        mayim_b:parseFloat(document.getElementById('v1b').value)||0,
+        paid_to_supplier:true
+      },{onConflict:'cycle_month,cycle_year,bill_month,bill_year'});
+    } else if(k==='v2'){
+      const m2=(csm+1)%12,y2=csm===11?csy+1:csy;
+      await sb.from('vaad_bills').upsert({
+        cycle_month:csm,cycle_year:csy,bill_month:m2,bill_year:y2,
+        shimira:parseFloat(document.getElementById('v2s').value)||0,
+        misim:parseFloat(document.getElementById('v2m').value)||0,
+        mayim_a:parseFloat(document.getElementById('v2a').value)||0,
+        mayim_b:parseFloat(document.getElementById('v2b').value)||0,
+        paid_to_supplier:true
+      },{onConflict:'cycle_month,cycle_year,bill_month,bill_year'});
+    } else if(k==='ar'){
+      await sb.from('arnona_bills').upsert({
+        cycle_month:csm,cycle_year:csy,
+        arnona_amount:parseFloat(document.getElementById('aa').value)||0,
+        biyuv_amount:parseFloat(document.getElementById('ab').value)||0,
+        paid_to_supplier:true
+      },{onConflict:'cycle_month,cycle_year'});
+    }
+    showToast('נשמר ✓');
+  } catch(e){ console.error(e); showToast('שגיאה בשמירה'); }
+}
+
+async function finalizeCycle(){
+  try {
+    await sb.from('cycles').upsert({
+      cycle_month:csm,cycle_year:csy,unit_paid:unitPaid
+    },{onConflict:'cycle_month,cycle_year'});
+    csm=(csm+2)%12;
+    if(csm===0||csm===1)csy++;
+    updateLabels();
+    await loadPrevReading();
+    resetEntry();
+    showTab('hist');
+    showToast('הסבב הועבר להיסטוריה ✓');
+  } catch(e){ console.error(e); }
+}
+
+async function markUnitPaid(){
+  unitPaid=true;
+  if(cycleId){
+    await sb.from('cycles').update({unit_paid:true,unit_paid_date:new Date().toISOString()}).eq('id',cycleId);
+  }
+  document.getElementById('unit-action-wrap').innerHTML=
+    '<div class="ua-confirm"><svg viewBox="0 0 14 14" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l4 4 6-6"/></svg>היחידה שילמה · '+new Date().toLocaleDateString('he-IL')+'</div>';
+  showToast('עודכן ✓');
+}
+
+async function loadPrevReading(){
+  const {data}=await sb.from('electricity_readings')
+    .select('current_reading')
+    .order('created_at',{ascending:false})
+    .limit(1);
+  if(data&&data.length>0){
+    prevReading=data[0].current_reading;
+    document.getElementById('prev-hint').textContent='קריאה קודמת: '+prevReading+' קוט"ש';
+  } else {
+    prevReading=0;
+    document.getElementById('prev-hint').textContent='קריאה קודמת: לא קיימת (הזנה ראשונה)';
+  }
+}
+
+async function loadCurrentCycle(){
+  const {data}=await sb.from('cycles')
+    .select('*')
+    .order('created_at',{ascending:false})
+    .limit(1);
+  if(data&&data.length>0){
+    const last=data[0];
+    csm=(last.cycle_month+2)%12;
+    csy=last.cycle_year+(last.cycle_month>=11?1:0);
+  }
+  updateLabels();
+}
+
+async function loadHistory(){
+  document.getElementById('hist-list').innerHTML='<div class="loading">טוען...</div>';
+  const {data:cycles}=await sb.from('cycles').select('*').order('created_at',{ascending:false});
+  if(!cycles||cycles.length===0){
+    document.getElementById('hist-list').innerHTML='<div class="empty-state">אין סבבים עדיין — הזן חשבוניות וסמן הכל כשולם</div>';
+    return;
+  }
+  let html='';
+  for(const c of cycles){
+    const {data:elec}=await sb.from('electricity_readings').select('*').eq('cycle_month',c.cycle_month).eq('cycle_year',c.cycle_year).single();
+    const {data:vaads}=await sb.from('vaad_bills').select('*').eq('cycle_month',c.cycle_month).eq('cycle_year',c.cycle_year);
+    const {data:ar}=await sb.from('arnona_bills').select('*').eq('cycle_month',c.cycle_month).eq('cycle_year',c.cycle_year).single();
+    const eu=elec?parseFloat(elec.unit_amount)||0:0;
+    const vu=(vaads||[]).reduce((s,v)=>s+(parseFloat(v.unit_amount)||0),0);
+    const au=ar?parseFloat(ar.unit_amount)||0:0;
+    const em=elec?parseFloat(elec.mine_amount)||0:0;
+    const vm=(vaads||[]).reduce((s,v)=>s+(parseFloat(v.mine_amount)||0),0);
+    const am=ar?parseFloat(ar.mine_amount)||0:0;
+    const tu=eu+vu+au, tm=em+vm+am;
+    const p=per(c.cycle_month,c.cycle_year);
+    const paidDate=c.unit_paid_date?new Date(c.unit_paid_date).toLocaleDateString('he-IL'):'';
+    const statusHtml=c.unit_paid
+      ?`<div class="chip-paid"><svg viewBox="0 0 12 12" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>היחידה שילמה${paidDate?' · '+paidDate:''}</div>`
+      :`<div class="pending-block"><div><div class="pending-title">ממתין לתשלום מהיחידה</div><div class="pending-sub">${f(tu)} טרם התקבלו</div></div><button class="pending-action" onclick="markHistPaid('${c.id}',this)">שולם</button></div>`;
+    html+=`<div class="hcard" style="margin-bottom:10px;">
+      <div class="hcard-top"><div class="hperiod">${p}</div></div>
+      <div class="hgrid">
+        <div class="hpane unit">
+          <div class="hpane-label">היחידה</div>
+          <div class="hpane-amount">${f(tu)}</div>
+          <div class="hrows">
+            <div class="hrow"><span>חשמל</span><span>${eu>0?f(eu):'–'}</span></div>
+            <div class="hrow"><span>ועד ×2</span><span>${vu>0?f(vu):'–'}</span></div>
+            <div class="hrow"><span>ארנונה</span><span>${au>0?f(au):'–'}</span></div>
+          </div>
+        </div>
+        <div class="hpane mine">
+          <div class="hpane-label">הבית שלי</div>
+          <div class="hpane-amount">${f(tm)}</div>
+          <div class="hrows">
+            <div class="hrow"><div class="rl"><span class="dot g"></span>חשמל</div><span>${em>0?f(em):'–'}</span></div>
+            <div class="hrow"><div class="rl"><span class="dot g"></span>ועד 1+2</div><span>${vm>0?f(vm):'–'}</span></div>
+            <div class="hrow"><div class="rl"><span class="dot g"></span>ארנונה</div><span>${am>0?f(am):'–'}</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="status-row">${statusHtml}</div>
+    </div>`;
+  }
+  document.getElementById('hist-list').innerHTML=html;
+}
+
+async function markHistPaid(cycleId,btn){
+  await sb.from('cycles').update({unit_paid:true,unit_paid_date:new Date().toISOString()}).eq('id',cycleId);
+  const row=btn.closest('.status-row');
+  row.innerHTML=`<div class="chip-paid"><svg viewBox="0 0 12 12" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>היחידה שילמה · ${new Date().toLocaleDateString('he-IL')}</div>`;
+  showToast('עודכן ✓');
+}
+
+function resetEntry(){
+  euV=0;emV=0;v1uV=0;v1mV=0;v2uV=0;v2mV=0;aruV=0;armV=0;
+  paid={elec:false,v1:false,v2:false,ar:false};unitPaid=false;
+  ['elec','v1','v2','ar'].forEach(k=>{
+    document.getElementById('pill-'+k).className='pill open';
+    document.getElementById('pill-'+k).innerHTML=ph();
+    document.getElementById('bc-'+k).classList.remove('done');
+    const d=document.getElementById('d-'+k);if(d)d.className='dot x';
+  });
+  ['mc','eb','v1s','v1m','v1a','v1b','v2s','v2m','v2a','v2b','aa','ab'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['kwh','eu','em','v1t','v1u','v1mi','v2t','v2u','v2mi','art','aru','arm','pu-e','pu-v','pu-a','pm-e','pm-v1','pm-v2','pm-a'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='–';});
+  ['stu','stm','pbu','pbm'].forEach(id=>document.getElementById(id).textContent='₪ –');
+  document.getElementById('unit-action-wrap').innerHTML=`<div class="unit-action"><div class="ua-text"><div class="ua-title">ממתין לתשלום מהיחידה</div><div class="ua-sub" id="ua-sub">הזן נתונים לחישוב</div></div><button class="ua-btn" onclick="markUnitPaid()">שולם</button></div>`;
+}
+
+function us(){
+  const tu=euV+v1uV+v2uV+aruV,tm=emV+v1mV+v2mV+armV;
+  document.getElementById('stu').textContent=tu>0?f(tu):'₪ –';
+  document.getElementById('stm').textContent=tm>0?f(tm):'₪ –';
+  document.getElementById('pbu').textContent=tu>0?f(tu):'₪ –';
+  document.getElementById('pbm').textContent=tm>0?f(tm):'₪ –';
+  document.getElementById('pu-e').textContent=euV>0?f(euV):'–';
+  document.getElementById('pu-v').textContent=(v1uV+v2uV)>0?f(v1uV+v2uV):'–';
+  document.getElementById('pu-a').textContent=aruV>0?f(aruV):'–';
+  document.getElementById('pm-e').textContent=emV>0?f(emV):'–';
+  document.getElementById('pm-v1').textContent=v1mV>0?f(v1mV):'–';
+  document.getElementById('pm-v2').textContent=v2mV>0?f(v2mV):'–';
+  document.getElementById('pm-a').textContent=armV>0?f(armV):'–';
+  const sub=document.getElementById('ua-sub');if(sub)sub.textContent=tu>0?f(tu)+' ממתינים':'הזן נתונים לחישוב';
+}
+
+function ce(){
+  const c=parseFloat(document.getElementById('mc').value),b=parseFloat(document.getElementById('eb').value);
+  if(!isNaN(c)&&c>prevReading){
+    const d=c-prevReading;euV=30+d*0.6402;
+    document.getElementById('kwh').textContent=d+' קוט"ש';
+    document.getElementById('eu').textContent=f(euV);
+    emV=!isNaN(b)?Math.max(0,b-euV):0;
+    document.getElementById('em').textContent=!isNaN(b)?f(emV):'–';
+  } else {euV=0;emV=0;document.getElementById('kwh').textContent='–';document.getElementById('eu').textContent='–';document.getElementById('em').textContent='–';}
+  us();
+}
+function vg(s,m,a,b){return{u:(m/3)+(a/2)+(b/2),mi:s+(m*2/3)+(a/2)+(b/2),t:s+m+a+b};}
+function cv1(){const r=vg(parseFloat(document.getElementById('v1s').value)||0,parseFloat(document.getElementById('v1m').value)||0,parseFloat(document.getElementById('v1a').value)||0,parseFloat(document.getElementById('v1b').value)||0);v1uV=r.u;v1mV=r.mi;document.getElementById('v1t').textContent=r.t>0?f(r.t):'–';document.getElementById('v1u').textContent=r.u>0?f(r.u):'–';document.getElementById('v1mi').textContent=r.mi>0?f(r.mi):'–';us();}
+function cv2(){const r=vg(parseFloat(document.getElementById('v2s').value)||0,parseFloat(document.getElementById('v2m').value)||0,parseFloat(document.getElementById('v2a').value)||0,parseFloat(document.getElementById('v2b').value)||0);v2uV=r.u;v2mV=r.mi;document.getElementById('v2t').textContent=r.t>0?f(r.t):'–';document.getElementById('v2u').textContent=r.u>0?f(r.u):'–';document.getElementById('v2mi').textContent=r.mi>0?f(r.mi):'–';us();}
+function car(){const a=parseFloat(document.getElementById('aa').value)||0,b=parseFloat(document.getElementById('ab').value)||0;aruV=(a/3)+(b/2);armV=(a*2/3)+(b/2);document.getElementById('art').textContent=(a+b)>0?f(a+b):'–';document.getElementById('aru').textContent=aruV>0?f(aruV):'–';document.getElementById('arm').textContent=armV>0?f(armV):'–';us();}
+
+async function init(){
+  await loadCurrentCycle();
+  await loadPrevReading();
+}
+init();
+</script>
+</body>
+</html>
