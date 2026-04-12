@@ -335,8 +335,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const HM = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-let csm = 0, csy = 2025;
-let prevReading = 0;
+let csm = 2, csy = 2025;
+let prevReading = 76007.5;
 let cycleId = null;
 let unitPaid = false;
 
@@ -467,8 +467,8 @@ async function loadPrevReading(){
     prevReading=data[0].current_reading;
     document.getElementById('prev-hint').textContent='קריאה קודמת: '+prevReading+' קוט"ש';
   } else {
-    prevReading=0;
-    document.getElementById('prev-hint').textContent='קריאה קודמת: לא קיימת (הזנה ראשונה)';
+    prevReading=76007.5;
+    document.getElementById('prev-hint').textContent='קריאה קודמת: 76007.5 קוט"ש';
   }
 }
 
