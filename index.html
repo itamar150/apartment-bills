@@ -35,7 +35,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 
 /* bill card */
 .bc{background:#fff;border-radius:16px;border:0.5px solid #c8e6cc;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
-.bc.done{border-color:#2d8a52;}
+.bc.done{border-color:#1a5c35;border-width:2px;box-shadow:0 0 0 1px #1a5c3520;}
 .bc-head{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;}
 .bc-left{display:flex;align-items:center;gap:10px;}
 .ic{width:34px;height:34px;border-radius:10px;background:#e8f5ec;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s;}
@@ -272,7 +272,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
       </div>
     </div>
 
-    <div class="sec-lbl">סיכום סבב</div>
+    <div class="sec-lbl">סיכום חשבון</div>
     <div class="sum">
       <div class="sum-head">
         <div class="sum-lbl" id="sum-period-lbl"></div>
@@ -288,12 +288,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
             <div class="pbrow"><span>חשמל</span><span id="pu-e">–</span></div>
             <div class="pbrow"><span>ועד צופים (×2)</span><span id="pu-v">–</span></div>
             <div class="pbrow"><span>ארנונה וביוב</span><span id="pu-a">–</span></div>
-          </div>
-          <div id="unit-action-wrap">
-            <div class="unit-action">
-              <div class="ua-text"><div class="ua-title">ממתין לתשלום מהיחידה</div><div class="ua-sub" id="ua-sub">הזן נתונים לחישוב</div></div>
-              <button class="ua-btn" onclick="markUnitPaid()">שולם</button>
-            </div>
           </div>
         </div>
         <div class="pb mine">
@@ -343,7 +337,7 @@ let unitPaid = false;
 function per(m,y){const m2=(m+1)%12,y2=m===11?y+1:y;return HM[m]+' – '+HM[m2]+' '+y2;}
 function m1n(m,y){return HM[m]+' '+y;}
 function m2n(m,y){const m2=(m+1)%12,y2=m===11?y+1:y;return HM[m2]+' '+y2;}
-function f(n){return '₪ '+parseFloat(n).toFixed(2);}
+function f(n){return '₪ '+parseFloat(n||0).toFixed(2);}
 function ph(){return '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם';}
 
 function showToast(msg){
@@ -374,7 +368,35 @@ function showTab(t){
 let euV=0,emV=0,v1uV=0,v1mV=0,v2uV=0,v2mV=0,aruV=0,armV=0;
 let paid={elec:false,v1:false,v2:false,ar:false};
 
+function hasData(k){
+  if(k==='elec'){
+    const c=document.getElementById('mc').value;
+    const b=document.getElementById('eb').value;
+    return c&&b&&parseFloat(c)>0&&parseFloat(b)>0;
+  }
+  if(k==='v1'){
+    const s=document.getElementById('v1s').value;
+    const m=document.getElementById('v1m').value;
+    return s||m;
+  }
+  if(k==='v2'){
+    const s=document.getElementById('v2s').value;
+    const m=document.getElementById('v2m').value;
+    return s||m;
+  }
+  if(k==='ar'){
+    const a=document.getElementById('aa').value;
+    const b=document.getElementById('ab').value;
+    return a||b;
+  }
+  return false;
+}
+
 async function togglePaid(k){
+  if(!paid[k]&&!hasData(k)){
+    showToast('יש להזין נתונים לפני סימון כשולם');
+    return;
+  }
   paid[k]=!paid[k];
   const pill=document.getElementById('pill-'+k);
   const card=document.getElementById('bc-'+k);
@@ -555,8 +577,8 @@ function resetEntry(){
   });
   ['mc','eb','v1s','v1m','v1a','v1b','v2s','v2m','v2a','v2b','aa','ab'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['kwh','eu','em','v1t','v1u','v1mi','v2t','v2u','v2mi','art','aru','arm','pu-e','pu-v','pu-a','pm-e','pm-v1','pm-v2','pm-a'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='–';});
-  ['stu','stm','pbu','pbm'].forEach(id=>document.getElementById(id).textContent='₪ –');
-  document.getElementById('unit-action-wrap').innerHTML=`<div class="unit-action"><div class="ua-text"><div class="ua-title">ממתין לתשלום מהיחידה</div><div class="ua-sub" id="ua-sub">הזן נתונים לחישוב</div></div><button class="ua-btn" onclick="markUnitPaid()">שולם</button></div>`;
+  ['stu','stm','pbu','pbm'].forEach(id=>document.getElementById(id).textContent='₪ 0.00');
+
 }
 
 function us(){
@@ -565,14 +587,14 @@ function us(){
   document.getElementById('stm').textContent=tm>0?f(tm):'₪ –';
   document.getElementById('pbu').textContent=tu>0?f(tu):'₪ –';
   document.getElementById('pbm').textContent=tm>0?f(tm):'₪ –';
-  document.getElementById('pu-e').textContent=euV>0?f(euV):'–';
-  document.getElementById('pu-v').textContent=(v1uV+v2uV)>0?f(v1uV+v2uV):'–';
-  document.getElementById('pu-a').textContent=aruV>0?f(aruV):'–';
-  document.getElementById('pm-e').textContent=emV>0?f(emV):'–';
-  document.getElementById('pm-v1').textContent=v1mV>0?f(v1mV):'–';
-  document.getElementById('pm-v2').textContent=v2mV>0?f(v2mV):'–';
-  document.getElementById('pm-a').textContent=armV>0?f(armV):'–';
-  const sub=document.getElementById('ua-sub');if(sub)sub.textContent=tu>0?f(tu)+' ממתינים':'הזן נתונים לחישוב';
+  document.getElementById('pu-e').textContent=f(euV);
+  document.getElementById('pu-v').textContent=f(v1uV+v2uV);
+  document.getElementById('pu-a').textContent=f(aruV);
+  document.getElementById('pm-e').textContent=f(emV);
+  document.getElementById('pm-v1').textContent=f(v1mV);
+  document.getElementById('pm-v2').textContent=f(v2mV);
+  document.getElementById('pm-a').textContent=f(armV);
+
 }
 
 function ce(){
@@ -591,9 +613,75 @@ function cv1(){const r=vg(parseFloat(document.getElementById('v1s').value)||0,pa
 function cv2(){const r=vg(parseFloat(document.getElementById('v2s').value)||0,parseFloat(document.getElementById('v2m').value)||0,parseFloat(document.getElementById('v2a').value)||0,parseFloat(document.getElementById('v2b').value)||0);v2uV=r.u;v2mV=r.mi;document.getElementById('v2t').textContent=r.t>0?f(r.t):'–';document.getElementById('v2u').textContent=r.u>0?f(r.u):'–';document.getElementById('v2mi').textContent=r.mi>0?f(r.mi):'–';us();}
 function car(){const a=parseFloat(document.getElementById('aa').value)||0,b=parseFloat(document.getElementById('ab').value)||0;aruV=(a/3)+(b/2);armV=(a*2/3)+(b/2);document.getElementById('art').textContent=(a+b)>0?f(a+b):'–';document.getElementById('aru').textContent=aruV>0?f(aruV):'–';document.getElementById('arm').textContent=armV>0?f(armV):'–';us();}
 
+async function loadCurrentEntries(){
+  const {data:elec}=await sb.from('electricity_readings').select('*').eq('cycle_month',csm).eq('cycle_year',csy).maybeSingle();
+  if(elec){
+    document.getElementById('mc').value=elec.current_reading;
+    document.getElementById('eb').value=elec.bill_amount;
+    ce();
+    if(elec.paid_to_supplier){
+      paid.elec=true;
+      document.getElementById('pill-elec').className='pill closed';
+      document.getElementById('pill-elec').innerHTML=ph();
+      document.getElementById('bc-elec').classList.add('done');
+      document.getElementById('d-elec').className='dot g';
+    }
+  }
+
+  const {data:vaads}=await sb.from('vaad_bills').select('*').eq('cycle_month',csm).eq('cycle_year',csy);
+  if(vaads&&vaads.length>0){
+    const v1=vaads.find(v=>v.bill_month===csm);
+    const m2=(csm+1)%12;
+    const v2=vaads.find(v=>v.bill_month===m2);
+    if(v1){
+      document.getElementById('v1s').value=v1.shimira||'';
+      document.getElementById('v1m').value=v1.misim||'';
+      document.getElementById('v1a').value=v1.mayim_a||'';
+      document.getElementById('v1b').value=v1.mayim_b||'';
+      cv1();
+      if(v1.paid_to_supplier){
+        paid.v1=true;
+        document.getElementById('pill-v1').className='pill closed';
+        document.getElementById('pill-v1').innerHTML=ph();
+        document.getElementById('bc-v1').classList.add('done');
+        document.getElementById('d-v1').className='dot g';
+      }
+    }
+    if(v2){
+      document.getElementById('v2s').value=v2.shimira||'';
+      document.getElementById('v2m').value=v2.misim||'';
+      document.getElementById('v2a').value=v2.mayim_a||'';
+      document.getElementById('v2b').value=v2.mayim_b||'';
+      cv2();
+      if(v2.paid_to_supplier){
+        paid.v2=true;
+        document.getElementById('pill-v2').className='pill closed';
+        document.getElementById('pill-v2').innerHTML=ph();
+        document.getElementById('bc-v2').classList.add('done');
+        document.getElementById('d-v2').className='dot g';
+      }
+    }
+  }
+
+  const {data:ar}=await sb.from('arnona_bills').select('*').eq('cycle_month',csm).eq('cycle_year',csy).maybeSingle();
+  if(ar){
+    document.getElementById('aa').value=ar.arnona_amount||'';
+    document.getElementById('ab').value=ar.biyuv_amount||'';
+    car();
+    if(ar.paid_to_supplier){
+      paid.ar=true;
+      document.getElementById('pill-ar').className='pill closed';
+      document.getElementById('pill-ar').innerHTML=ph();
+      document.getElementById('bc-ar').classList.add('done');
+      document.getElementById('d-ar').className='dot g';
+    }
+  }
+}
+
 async function init(){
   await loadCurrentCycle();
   await loadPrevReading();
+  await loadCurrentEntries();
 }
 init();
 </script>
