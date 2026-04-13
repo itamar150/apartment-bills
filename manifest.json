@@ -1,7 +1,7 @@
 {
   "name": "ניהול חשבונות דירה",
   "short_name": "ניהול חשבונות דירה",
-  "description": "מעקב חשבונות דירה — חשמל, ועד, ארנונה",
+  "description": "מעקב חשבונות דירה — חשמל, ועד מקומי צופים, ארנונה",
   "start_url": "/apartment-bills/",
   "display": "standalone",
   "background_color": "#f4faf6",
