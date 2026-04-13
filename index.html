@@ -16,9 +16,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 .app{display:flex;flex-direction:column;min-height:100vh;background:#f4faf6;}
 
 /* topbar */
-.topbar{background:#d4edda;padding:14px 20px 12px;border-bottom:0.5px solid #b8dfc4;flex-shrink:0;position:sticky;top:0;z-index:10;}
+.topbar{background:#d4edda;padding:10px 16px 10px;border-bottom:0.5px solid #b8dfc4;flex-shrink:0;}
 .topbar-title{font-size:17px;font-weight:600;color:#1a5c35;}
-.topbar-meta{display:flex;align-items:center;gap:6px;margin-top:3px;}
+.topbar-meta{display:flex;align-items:center;gap:6px;margin-top:1px;}
 .topbar-label{font-size:11px;color:#3a8a5a;}
 .topbar-sep{font-size:11px;color:#9abfaa;}
 .topbar-period{font-size:12px;font-weight:600;color:#1a5c35;}
@@ -72,11 +72,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 
 /* summary block */
 .sum{border-radius:16px;overflow:hidden;border:0.5px solid #b8dfc4;}
-.sum-head{background:#1a5c35;padding:15px 16px;color:white;}
+.sum-head{background:#1a5c35;padding:11px 14px;color:white;}
 .sum-lbl{font-size:10px;opacity:0.7;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:9px;}
 .sum-totals{display:flex;justify-content:space-between;}
 .sum-side-lbl{font-size:11px;opacity:0.7;margin-bottom:2px;}
-.sum-side-amt{font-size:22px;font-weight:700;}
+.sum-side-amt{font-size:18px;font-weight:700;}
 .sum-body{background:#fff;padding:13px 14px;display:flex;flex-direction:column;gap:9px;}
 .pb{border-radius:12px;padding:12px 13px;}
 .pb.u{background:#fffbf0;border:0.5px solid #f0d8a0;}
@@ -145,6 +145,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 .ni span{font-size:10px;color:#5a8a6a;display:block;font-weight:500;}
 .ni.active span{color:#1a5c35;font-weight:600;}
 
+/* accordion */
+.sum-head{cursor:pointer;user-select:none;}
+.sum-head-row{display:flex;align-items:center;justify-content:space-between;}
+.sum-chevron{width:18px;height:18px;transition:transform 0.25s;flex-shrink:0;}
+.sum-chevron.open{transform:rotate(180deg);}
+.sum-detail{overflow:hidden;max-height:0;transition:max-height 0.3s ease;}
+.sum-detail.open{max-height:400px;}
+
 /* toast */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a5c35;color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:100;opacity:0;transition:opacity 0.3s;pointer-events:none;}
 .toast.show{opacity:1;}
@@ -153,11 +161,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 <body>
 <div class="app">
   <div class="topbar">
-    <div class="topbar-title">ניהול חשבונות דירה</div>
-    <div class="topbar-meta">
-      <span class="topbar-label">חודשים</span>
-      <span class="topbar-sep">·</span>
-      <span class="topbar-period" id="topbar-period">טוען...</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;">
+        <div class="topbar-title" style="line-height:1;">ניהול חשבונות דירה</div>
+        <div class="topbar-meta" style="margin-top:0;">
+          <span class="topbar-label">חודשים:</span>
+          <span class="topbar-sep">·</span>
+          <span class="topbar-period" id="topbar-period">טוען...</span>
+        </div>
+      </div>
+      <img src="icon-192.png" width="42" height="42" style="border-radius:10px;flex-shrink:0;display:block;" alt=""/>
     </div>
   </div>
   <div class="nav-tabs">
@@ -184,11 +197,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ir"><div class="il">סה"כ חשבונית</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="eb" oninput="ce()"/></div>
         </div>
         <div class="hint" id="prev-hint">קריאה קודמת: טוען...</div>
-        <div class="rr"><span>צריכת היחידה</span><span id="kwh">–</span></div>
+        <div class="rr"><span>צריכת היחידה</span><span id="kwh">₪ 0.00</span></div>
         <div class="divl"></div>
         <div class="sp">
-          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="em">–</div></div>
-          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="eu">–</div></div>
+          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="em">₪ 0.00</div></div>
+          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="eu">₪ 0.00</div></div>
         </div>
       </div>
     </div>
@@ -211,11 +224,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ir"><div class="il">מים א'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1a" oninput="cv1()"/></div>
           <div class="ir"><div class="il">מים ב'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1b" oninput="cv1()"/></div>
         </div>
-        <div class="rr"><span>סה"כ חשבונית</span><span id="v1t">–</span></div>
+        <div class="rr"><span>סה"כ חשבונית</span><span id="v1t">₪ 0.00</span></div>
         <div class="divl"></div>
         <div class="sp">
-          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="v1mi">–</div></div>
-          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="v1u">–</div></div>
+          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="v1mi">₪ 0.00</div></div>
+          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="v1u">₪ 0.00</div></div>
         </div>
       </div>
     </div>
@@ -238,11 +251,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ir"><div class="il">מים א'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2a" oninput="cv2()"/></div>
           <div class="ir"><div class="il">מים ב'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2b" oninput="cv2()"/></div>
         </div>
-        <div class="rr"><span>סה"כ חשבונית</span><span id="v2t">–</span></div>
+        <div class="rr"><span>סה"כ חשבונית</span><span id="v2t">₪ 0.00</span></div>
         <div class="divl"></div>
         <div class="sp">
-          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="v2mi">–</div></div>
-          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="v2u">–</div></div>
+          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="v2mi">₪ 0.00</div></div>
+          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="v2u">₪ 0.00</div></div>
         </div>
       </div>
     </div>
@@ -263,42 +276,48 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ir"><div class="il">ארנונה</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="aa" oninput="car()"/></div>
           <div class="ir"><div class="il">ביוב ומים</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="ab" oninput="car()"/></div>
         </div>
-        <div class="rr"><span>סה"כ חשבונית</span><span id="art">–</span></div>
+        <div class="rr"><span>סה"כ חשבונית</span><span id="art">₪ 0.00</span></div>
         <div class="divl"></div>
         <div class="sp">
-          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="arm">–</div></div>
-          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="aru">–</div></div>
+          <div class="spane m"><div class="st">הבית שלי</div><div class="sa" id="arm">₪ 0.00</div></div>
+          <div class="spane u"><div class="st">היחידה</div><div class="sa" id="aru">₪ 0.00</div></div>
         </div>
       </div>
     </div>
 
     <div class="sec-lbl">סיכום חשבון</div>
     <div class="sum">
-      <div class="sum-head">
-        <div class="sum-lbl" id="sum-period-lbl"></div>
-        <div class="sum-totals">
-          <div><div class="sum-side-lbl">היחידה חייבת לי</div><div class="sum-side-amt" id="stu">₪ 0.00</div></div>
-          <div style="text-align:left;"><div class="sum-side-lbl">הבית שלי</div><div class="sum-side-amt" id="stm">₪ 0.00</div></div>
+      <div class="sum-head" onclick="toggleSummary()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg class="sum-chevron" id="sum-chevron" viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l5 5 5-5"/></svg>
+          <div style="flex:1;">
+            <div class="sum-totals">
+              <div><div class="sum-side-lbl">היחידה</div><div class="sum-side-amt" id="stu">₪ 0.00</div></div>
+              <div style="text-align:left;"><div class="sum-side-lbl">הבית</div><div class="sum-side-amt" id="stm">₪ 0.00</div></div>
+            </div>
+          </div>
         </div>
       </div>
+      <div class="sum-detail" id="sum-detail">
       <div class="sum-body">
         <div class="pb u">
           <div class="pb-head"><span class="pb-lbl">תשלום מהיחידה</span><span class="pb-amt" id="pbu">₪ 0.00</span></div>
           <div class="pbr">
-            <div class="pbrow"><span>חשמל</span><span id="pu-e">–</span></div>
-            <div class="pbrow"><span>ועד צופים (×2)</span><span id="pu-v">–</span></div>
-            <div class="pbrow"><span>ארנונה וביוב</span><span id="pu-a">–</span></div>
+            <div class="pbrow"><span>חשמל</span><span id="pu-e">₪ 0.00</span></div>
+            <div class="pbrow"><span>ועד צופים (×2)</span><span id="pu-v">₪ 0.00</span></div>
+            <div class="pbrow"><span>ארנונה וביוב</span><span id="pu-a">₪ 0.00</span></div>
           </div>
         </div>
         <div class="pb mine">
           <div class="pb-head"><span class="pb-lbl">תשלומי הבית שלי</span><span class="pb-amt" id="pbm">₪ 0.00</span></div>
           <div class="pbr">
-            <div class="pbrow"><div class="rl"><span class="dot x" id="d-elec"></span>חשמל</div><span id="pm-e">–</span></div>
-            <div class="pbrow"><div class="rl"><span class="dot x" id="d-v1"></span>ועד חודש 1</div><span id="pm-v1">–</span></div>
-            <div class="pbrow"><div class="rl"><span class="dot x" id="d-v2"></span>ועד חודש 2</div><span id="pm-v2">–</span></div>
-            <div class="pbrow"><div class="rl"><span class="dot x" id="d-ar"></span>ארנונה וביוב</div><span id="pm-a">–</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-elec"></span>חשמל</div><span id="pm-e">₪ 0.00</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-v1"></span>ועד חודש 1</div><span id="pm-v1">₪ 0.00</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-v2"></span>ועד חודש 2</div><span id="pm-v2">₪ 0.00</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-ar"></span>ארנונה וביוב</div><span id="pm-a">₪ 0.00</span></div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>
@@ -338,6 +357,7 @@ function per(m,y){const m2=(m+1)%12,y2=m===11?y+1:y;return HM[m]+' – '+HM[m2]+
 function m1n(m,y){return HM[m]+' '+y;}
 function m2n(m,y){const m2=(m+1)%12,y2=m===11?y+1:y;return HM[m2]+' '+y2;}
 function f(n){return '₪ '+parseFloat(n||0).toFixed(2);}
+const ZERO='₪ 0.00';
 function ph(){return '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם';}
 
 function showToast(msg){
@@ -349,7 +369,7 @@ function showToast(msg){
 function updateLabels(){
   const m=csm,y=csy,p=per(m,y);
   document.getElementById('topbar-period').textContent=p;
-  document.getElementById('sum-period-lbl').textContent='סה"כ '+p;
+  
   document.getElementById('lbl-v1').textContent='ועד צופים — '+m1n(m,y);
   document.getElementById('lbl-v2').textContent='ועד צופים — '+m2n(m,y);
   document.getElementById('sub-v1').textContent=m1n(m,y);
@@ -460,8 +480,10 @@ async function finalizeCycle(){
     await sb.from('cycles').upsert({
       cycle_month:csm,cycle_year:csy,unit_paid:unitPaid
     },{onConflict:'cycle_month,cycle_year'});
-    csm=(csm+2)%12;
-    if(csm===0||csm===1)csy++;
+    const nextM=(csm+2)%12;
+    const nextY=nextM<csm?csy+1:csy;
+    csm=nextM;
+    csy=nextY;
     updateLabels();
     await loadPrevReading();
     resetEntry();
@@ -501,8 +523,17 @@ async function loadCurrentCycle(){
     .limit(1);
   if(data&&data.length>0){
     const last=data[0];
-    csm=(last.cycle_month+2)%12;
-    csy=last.cycle_year+(last.cycle_month>=11?1:0);
+    const nextM=(last.cycle_month+2)%12;
+    const nextY=last.cycle_year+(last.cycle_month>=11?1:0);
+    csm=nextM;
+    csy=nextY;
+  } else {
+    // No cycles yet — calculate from current date
+    const now=new Date();
+    const m=now.getMonth();
+    // Start of even-month cycle (0=Jan, 2=Mar, 4=May...)
+    csm=m%2===0?m:m-1;
+    csy=now.getFullYear();
   }
   updateLabels();
 }
@@ -576,8 +607,8 @@ function resetEntry(){
     const d=document.getElementById('d-'+k);if(d)d.className='dot x';
   });
   ['mc','eb','v1s','v1m','v1a','v1b','v2s','v2m','v2a','v2b','aa','ab'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['kwh','eu','em','v1t','v1u','v1mi','v2t','v2u','v2mi','art','aru','arm','pu-e','pu-v','pu-a','pm-e','pm-v1','pm-v2','pm-a'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='–';});
-  ['stu','stm','pbu','pbm'].forEach(id=>document.getElementById(id).textContent='₪ 0.00');
+  ['kwh','eu','em','v1t','v1u','v1mi','v2t','v2u','v2mi','art','aru','arm','pu-e','pu-v','pu-a','pm-e','pm-v1','pm-v2','pm-a'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ZERO;});
+  ['stu','stm','pbu','pbm'].forEach(id=>document.getElementById(id).textContent=ZERO);
 
 }
 
@@ -605,13 +636,13 @@ function ce(){
     document.getElementById('eu').textContent=f(euV);
     emV=!isNaN(b)?Math.max(0,b-euV):0;
     document.getElementById('em').textContent=!isNaN(b)?f(emV):'–';
-  } else {euV=0;emV=0;document.getElementById('kwh').textContent='–';document.getElementById('eu').textContent='–';document.getElementById('em').textContent='–';}
+  } else {euV=0;emV=0;document.getElementById('kwh').textContent=ZERO;document.getElementById('eu').textContent=ZERO;document.getElementById('em').textContent=ZERO;}
   us();
 }
 function vg(s,m,a,b){return{u:(m/3)+(a/2)+(b/2),mi:s+(m*2/3)+(a/2)+(b/2),t:s+m+a+b};}
-function cv1(){const r=vg(parseFloat(document.getElementById('v1s').value)||0,parseFloat(document.getElementById('v1m').value)||0,parseFloat(document.getElementById('v1a').value)||0,parseFloat(document.getElementById('v1b').value)||0);v1uV=r.u;v1mV=r.mi;document.getElementById('v1t').textContent=r.t>0?f(r.t):'–';document.getElementById('v1u').textContent=r.u>0?f(r.u):'–';document.getElementById('v1mi').textContent=r.mi>0?f(r.mi):'–';us();}
-function cv2(){const r=vg(parseFloat(document.getElementById('v2s').value)||0,parseFloat(document.getElementById('v2m').value)||0,parseFloat(document.getElementById('v2a').value)||0,parseFloat(document.getElementById('v2b').value)||0);v2uV=r.u;v2mV=r.mi;document.getElementById('v2t').textContent=r.t>0?f(r.t):'–';document.getElementById('v2u').textContent=r.u>0?f(r.u):'–';document.getElementById('v2mi').textContent=r.mi>0?f(r.mi):'–';us();}
-function car(){const a=parseFloat(document.getElementById('aa').value)||0,b=parseFloat(document.getElementById('ab').value)||0;aruV=(a/3)+(b/2);armV=(a*2/3)+(b/2);document.getElementById('art').textContent=(a+b)>0?f(a+b):'–';document.getElementById('aru').textContent=aruV>0?f(aruV):'–';document.getElementById('arm').textContent=armV>0?f(armV):'–';us();}
+function cv1(){const r=vg(parseFloat(document.getElementById('v1s').value)||0,parseFloat(document.getElementById('v1m').value)||0,parseFloat(document.getElementById('v1a').value)||0,parseFloat(document.getElementById('v1b').value)||0);v1uV=r.u;v1mV=r.mi;document.getElementById('v1t').textContent=f(r.t);document.getElementById('v1u').textContent=f(r.u);document.getElementById('v1mi').textContent=f(r.mi);us();}
+function cv2(){const r=vg(parseFloat(document.getElementById('v2s').value)||0,parseFloat(document.getElementById('v2m').value)||0,parseFloat(document.getElementById('v2a').value)||0,parseFloat(document.getElementById('v2b').value)||0);v2uV=r.u;v2mV=r.mi;document.getElementById('v2t').textContent=f(r.t);document.getElementById('v2u').textContent=f(r.u);document.getElementById('v2mi').textContent=f(r.mi);us();}
+function car(){const a=parseFloat(document.getElementById('aa').value)||0,b=parseFloat(document.getElementById('ab').value)||0;aruV=(a/3)+(b/2);armV=(a*2/3)+(b/2);document.getElementById('art').textContent=f(a+b);document.getElementById('aru').textContent=f(aruV);document.getElementById('arm').textContent=f(armV);us();}
 
 async function loadCurrentEntries(){
   const {data:elec}=await sb.from('electricity_readings').select('*').eq('cycle_month',csm).eq('cycle_year',csy).maybeSingle();
@@ -676,6 +707,13 @@ async function loadCurrentEntries(){
       document.getElementById('d-ar').className='dot g';
     }
   }
+}
+
+function toggleSummary(){
+  const detail=document.getElementById('sum-detail');
+  const chevron=document.getElementById('sum-chevron');
+  detail.classList.toggle('open');
+  chevron.classList.toggle('open');
 }
 
 async function init(){
