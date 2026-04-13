@@ -277,13 +277,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
       <div class="sum-head">
         <div class="sum-lbl" id="sum-period-lbl"></div>
         <div class="sum-totals">
-          <div><div class="sum-side-lbl">היחידה חייבת לי</div><div class="sum-side-amt" id="stu">₪ –</div></div>
-          <div style="text-align:left;"><div class="sum-side-lbl">הבית שלי</div><div class="sum-side-amt" id="stm">₪ –</div></div>
+          <div><div class="sum-side-lbl">היחידה חייבת לי</div><div class="sum-side-amt" id="stu">₪ 0.00</div></div>
+          <div style="text-align:left;"><div class="sum-side-lbl">הבית שלי</div><div class="sum-side-amt" id="stm">₪ 0.00</div></div>
         </div>
       </div>
       <div class="sum-body">
         <div class="pb u">
-          <div class="pb-head"><span class="pb-lbl">תשלום מהיחידה</span><span class="pb-amt" id="pbu">₪ –</span></div>
+          <div class="pb-head"><span class="pb-lbl">תשלום מהיחידה</span><span class="pb-amt" id="pbu">₪ 0.00</span></div>
           <div class="pbr">
             <div class="pbrow"><span>חשמל</span><span id="pu-e">–</span></div>
             <div class="pbrow"><span>ועד צופים (×2)</span><span id="pu-v">–</span></div>
@@ -291,7 +291,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           </div>
         </div>
         <div class="pb mine">
-          <div class="pb-head"><span class="pb-lbl">תשלומי הבית שלי</span><span class="pb-amt" id="pbm">₪ –</span></div>
+          <div class="pb-head"><span class="pb-lbl">תשלומי הבית שלי</span><span class="pb-amt" id="pbm">₪ 0.00</span></div>
           <div class="pbr">
             <div class="pbrow"><div class="rl"><span class="dot x" id="d-elec"></span>חשמל</div><span id="pm-e">–</span></div>
             <div class="pbrow"><div class="rl"><span class="dot x" id="d-v1"></span>ועד חודש 1</div><span id="pm-v1">–</span></div>
@@ -583,10 +583,10 @@ function resetEntry(){
 
 function us(){
   const tu=euV+v1uV+v2uV+aruV,tm=emV+v1mV+v2mV+armV;
-  document.getElementById('stu').textContent=tu>0?f(tu):'₪ –';
-  document.getElementById('stm').textContent=tm>0?f(tm):'₪ –';
-  document.getElementById('pbu').textContent=tu>0?f(tu):'₪ –';
-  document.getElementById('pbm').textContent=tm>0?f(tm):'₪ –';
+  document.getElementById('stu').textContent=f(tu);
+  document.getElementById('stm').textContent=f(tm);
+  document.getElementById('pbu').textContent=f(tu);
+  document.getElementById('pbm').textContent=f(tm);
   document.getElementById('pu-e').textContent=f(euV);
   document.getElementById('pu-v').textContent=f(v1uV+v2uV);
   document.getElementById('pu-a').textContent=f(aruV);
