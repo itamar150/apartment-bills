@@ -54,6 +54,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 .il{font-size:11px;color:#666;font-weight:500;}
 .if{background:#f0faf3;border:0.5px solid #b8dfc4;border-radius:8px;padding:8px 11px;font-size:15px;color:#1a1a1a;width:100%;-webkit-appearance:none;}
 .if:focus{outline:none;border-color:#2d8a52;background:#e8f5ec;}
+.if:disabled{background:#f5f5f5;color:#aaa;border-color:#e0e0e0;cursor:not-allowed;}
+.pill.locked{background:#1a5c35;color:white;cursor:not-allowed;opacity:0.85;}
 .if::placeholder{color:#b8d8c0;}
 .hint{font-size:11px;color:#9abfaa;}
 .rr{display:flex;justify-content:space-between;font-size:12px;color:#666;padding:2px 0;}
@@ -219,7 +221,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
       </div>
       <div class="bc-body">
         <div class="two">
-          <div class="ir"><div class="il">שמירה</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1s" oninput="cv1()"/></div>
+          <div class="ir"><div class="il">שמירה</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1s" value="140" oninput="cv1()"/></div>
           <div class="ir"><div class="il">מיסים</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1m" oninput="cv1()"/></div>
           <div class="ir"><div class="il">מים א'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1a" oninput="cv1()"/></div>
           <div class="ir"><div class="il">מים ב'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v1b" oninput="cv1()"/></div>
@@ -246,7 +248,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
       </div>
       <div class="bc-body">
         <div class="two">
-          <div class="ir"><div class="il">שמירה</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2s" oninput="cv2()"/></div>
+          <div class="ir"><div class="il">שמירה</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2s" value="140" oninput="cv2()"/></div>
           <div class="ir"><div class="il">מיסים</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2m" oninput="cv2()"/></div>
           <div class="ir"><div class="il">מים א'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2a" oninput="cv2()"/></div>
           <div class="ir"><div class="il">מים ב'</div><input class="if" placeholder="₪" type="number" inputmode="decimal" id="v2b" oninput="cv2()"/></div>
@@ -372,8 +374,8 @@ function updateLabels(){
   
   document.getElementById('lbl-v1').textContent='ועד צופים — '+m1n(m,y);
   document.getElementById('lbl-v2').textContent='ועד צופים — '+m2n(m,y);
-  document.getElementById('sub-v1').textContent=m1n(m,y);
-  document.getElementById('sub-v2').textContent=m2n(m,y);
+  document.getElementById('sub-v1').textContent='חד-חודשי';
+  document.getElementById('sub-v2').textContent='חד-חודשי';
 }
 
 function showTab(t){
@@ -387,6 +389,14 @@ function showTab(t){
 
 let euV=0,emV=0,v1uV=0,v1mV=0,v2uV=0,v2mV=0,aruV=0,armV=0;
 let paid={elec:false,v1:false,v2:false,ar:false};
+
+function lockCard(k){
+  const inputs=document.querySelectorAll('#bc-'+k+' input');
+  inputs.forEach(inp=>inp.disabled=true);
+  const pill=document.getElementById('pill-'+k);
+  pill.className='pill locked';
+  pill.onclick=null;
+}
 
 function hasData(k){
   if(k==='elec'){
@@ -425,7 +435,14 @@ async function togglePaid(k){
     pill.className='pill closed';pill.innerHTML=ph();
     card.classList.add('done');
     if(dot)dot.className='dot g';
-    await saveBill(k);
+    try {
+      await saveBill(k);
+    } catch(err){
+      paid[k]=false;
+      pill.className='pill open';pill.innerHTML=ph();
+      card.classList.remove('done');
+      if(dot)dot.className='dot x';
+    }
   } else {
     pill.className='pill open';pill.innerHTML=ph();
     card.classList.remove('done');
@@ -439,47 +456,74 @@ async function saveBill(k){
     if(k==='elec'){
       const curr=parseFloat(document.getElementById('mc').value)||0;
       const bill=parseFloat(document.getElementById('eb').value)||0;
-      await sb.from('electricity_readings').upsert({
+      const diff=curr-prevReading;
+      const uAmt=30+diff*0.6402;
+      const mAmt=Math.max(0,bill-uAmt);
+      const {error:e1}=await sb.from('electricity_readings').upsert({
         cycle_month:csm,cycle_year:csy,
         previous_reading:prevReading,current_reading:curr,
-        bill_amount:bill,paid_to_supplier:true
+        kwh_used:diff,bill_amount:bill,
+        unit_amount:uAmt,mine_amount:mAmt,
+        paid_to_supplier:true
       },{onConflict:'cycle_month,cycle_year'});
+      if(e1)throw e1;
     } else if(k==='v1'){
-      await sb.from('vaad_bills').upsert({
+      const s1=parseFloat(document.getElementById('v1s').value)||0;
+      const m1=parseFloat(document.getElementById('v1m').value)||0;
+      const a1=parseFloat(document.getElementById('v1a').value)||0;
+      const b1=parseFloat(document.getElementById('v1b').value)||0;
+      const u1=(m1/3)+(a1/2)+(b1/2);
+      const mi1=s1+(m1*2/3)+(a1/2)+(b1/2);
+      const {error:e2}=await sb.from('vaad_bills').upsert({
         cycle_month:csm,cycle_year:csy,bill_month:csm,bill_year:csy,
-        shimira:parseFloat(document.getElementById('v1s').value)||0,
-        misim:parseFloat(document.getElementById('v1m').value)||0,
-        mayim_a:parseFloat(document.getElementById('v1a').value)||0,
-        mayim_b:parseFloat(document.getElementById('v1b').value)||0,
+        shimira:s1,misim:m1,mayim_a:a1,mayim_b:b1,
+        total:s1+m1+a1+b1,unit_amount:u1,mine_amount:mi1,
         paid_to_supplier:true
       },{onConflict:'cycle_month,cycle_year,bill_month,bill_year'});
+      if(e2)throw e2;
     } else if(k==='v2'){
       const m2=(csm+1)%12,y2=csm===11?csy+1:csy;
-      await sb.from('vaad_bills').upsert({
+      const s2=parseFloat(document.getElementById('v2s').value)||0;
+      const mm2=parseFloat(document.getElementById('v2m').value)||0;
+      const a2=parseFloat(document.getElementById('v2a').value)||0;
+      const b2=parseFloat(document.getElementById('v2b').value)||0;
+      const u2=(mm2/3)+(a2/2)+(b2/2);
+      const mi2=s2+(mm2*2/3)+(a2/2)+(b2/2);
+      const {error:e3}=await sb.from('vaad_bills').upsert({
         cycle_month:csm,cycle_year:csy,bill_month:m2,bill_year:y2,
-        shimira:parseFloat(document.getElementById('v2s').value)||0,
-        misim:parseFloat(document.getElementById('v2m').value)||0,
-        mayim_a:parseFloat(document.getElementById('v2a').value)||0,
-        mayim_b:parseFloat(document.getElementById('v2b').value)||0,
+        shimira:s2,misim:mm2,mayim_a:a2,mayim_b:b2,
+        total:s2+mm2+a2+b2,unit_amount:u2,mine_amount:mi2,
         paid_to_supplier:true
       },{onConflict:'cycle_month,cycle_year,bill_month,bill_year'});
+      if(e3)throw e3;
     } else if(k==='ar'){
-      await sb.from('arnona_bills').upsert({
+      const aAmt=parseFloat(document.getElementById('aa').value)||0;
+      const bAmt=parseFloat(document.getElementById('ab').value)||0;
+      const uAmt=(aAmt/3)+(bAmt/2);
+      const mAmt=(aAmt*2/3)+(bAmt/2);
+      const {error:e4}=await sb.from('arnona_bills').upsert({
         cycle_month:csm,cycle_year:csy,
-        arnona_amount:parseFloat(document.getElementById('aa').value)||0,
-        biyuv_amount:parseFloat(document.getElementById('ab').value)||0,
+        arnona_amount:aAmt,biyuv_amount:bAmt,
+        total:aAmt+bAmt,unit_amount:uAmt,mine_amount:mAmt,
         paid_to_supplier:true
       },{onConflict:'cycle_month,cycle_year'});
+      if(e4)throw e4;
     }
     showToast('נשמר ✓');
-  } catch(e){ console.error(e); showToast('שגיאה בשמירה'); }
+  } catch(e){
+    console.error('Supabase error:', JSON.stringify(e));
+    showToast('שגיאה: '+(e.message||e.error_description||JSON.stringify(e)));
+    throw e;
+  }
+  lockCard(k);
 }
 
 async function finalizeCycle(){
   try {
-    await sb.from('cycles').upsert({
+    const {error:ef}=await sb.from('cycles').upsert({
       cycle_month:csm,cycle_year:csy,unit_paid:unitPaid
     },{onConflict:'cycle_month,cycle_year'});
+    if(ef)throw ef;
     const nextM=(csm+2)%12;
     const nextY=nextM<csm?csy+1:csy;
     csm=nextM;
@@ -493,10 +537,11 @@ async function finalizeCycle(){
 }
 
 async function markUnitPaid(){
-  unitPaid=true;
   if(cycleId){
-    await sb.from('cycles').update({unit_paid:true,unit_paid_date:new Date().toISOString()}).eq('id',cycleId);
+    const {error:eu}=await sb.from('cycles').update({unit_paid:true,unit_paid_date:new Date().toISOString()}).eq('id',cycleId);
+    if(eu){showToast('שגיאה: '+eu.message);return;}
   }
+  unitPaid=true;
   document.getElementById('unit-action-wrap').innerHTML=
     '<div class="ua-confirm"><svg viewBox="0 0 14 14" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l4 4 6-6"/></svg>היחידה שילמה · '+new Date().toLocaleDateString('he-IL')+'</div>';
   showToast('עודכן ✓');
@@ -676,6 +721,7 @@ async function loadCurrentEntries(){
         document.getElementById('pill-v1').innerHTML=ph();
         document.getElementById('bc-v1').classList.add('done');
         document.getElementById('d-v1').className='dot g';
+        lockCard('v1');
       }
     }
     if(v2){
@@ -690,6 +736,7 @@ async function loadCurrentEntries(){
         document.getElementById('pill-v2').innerHTML=ph();
         document.getElementById('bc-v2').classList.add('done');
         document.getElementById('d-v2').className='dot g';
+        lockCard('v2');
       }
     }
   }
@@ -705,6 +752,7 @@ async function loadCurrentEntries(){
       document.getElementById('pill-ar').innerHTML=ph();
       document.getElementById('bc-ar').classList.add('done');
       document.getElementById('d-ar').className='dot g';
+      lockCard('ar');
     }
   }
 }
