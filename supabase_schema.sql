@@ -66,3 +66,9 @@ create policy "allow all" on electricity_readings for all using (true) with chec
 create policy "allow all" on vaad_bills for all using (true) with check (true);
 create policy "allow all" on arnona_bills for all using (true) with check (true);
 create policy "allow all" on cycles for all using (true) with check (true);
+
+-- unique constraints (נדרשים כדי שה-upsert עם onConflict יעבוד)
+alter table electricity_readings add constraint unique_elec_cycle unique (cycle_month, cycle_year);
+alter table vaad_bills add constraint unique_vaad_cycle_bill unique (cycle_month, cycle_year, bill_month, bill_year);
+alter table arnona_bills add constraint unique_arnona_cycle unique (cycle_month, cycle_year);
+-- cycles כבר מוגדר עם unique(cycle_month, cycle_year) בהגדרת הטבלה למעלה

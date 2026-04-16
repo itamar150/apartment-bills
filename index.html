@@ -135,6 +135,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 .pending-sub{font-size:10px;color:#b08a30;margin-top:1px;}
 .pending-action{background:#1a5c35;color:white;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:600;cursor:pointer;}
 .pending-action:active{background:#155228;}
+.send-btn{background:transparent;color:#1a5c35;border:1.5px solid #1a5c35;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.send-btn:active{background:#e8f5ec;}
 .empty-state{text-align:center;padding:48px 20px;color:#9abfaa;font-size:14px;}
 
 /* loading */
@@ -348,6 +350,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 const SUPABASE_URL = 'https://pgerlxygrvkoppfpxnqn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnZXJseHlncnZrb3BwZnB4bnFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwMDk4NTMsImV4cCI6MjA5MTU4NTg1M30.NgB7h80hdiM0tDZR-uoGgBn-kGnSDeJLYQronkIGcqk';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const MAKE_WEBHOOK_URL = 'https://hook.eu1.make.com/g90aho3ogdy3skzvb1h7lc4rf3pygij0'; // הכנס כאן את ה-Webhook URL מ-Make.com
 
 const HM = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 let csm = 2, csy = 2025;
@@ -583,6 +586,20 @@ async function loadCurrentCycle(){
   updateLabels();
 }
 
+function sendSummary(month,year,elec,vaad,arnona){
+  if(!MAKE_WEBHOOK_URL){showToast('יש להגדיר MAKE_WEBHOOK_URL');return;}
+  const payload={
+    period:per(month,year),
+    unit_total:parseFloat((elec+vaad+arnona).toFixed(2)),
+    electricity:parseFloat(elec.toFixed(2)),
+    vaad:parseFloat(vaad.toFixed(2)),
+    arnona:parseFloat(arnona.toFixed(2))
+  };
+  fetch(MAKE_WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>showToast(r.ok?'סיכום נשלח ✓':'שגיאה בשליחה'))
+    .catch(()=>showToast('שגיאה בשליחה'));
+}
+
 async function loadHistory(){
   document.getElementById('hist-list').innerHTML='<div class="loading">טוען...</div>';
   const {data:cycles}=await sb.from('cycles').select('*').order('created_at',{ascending:false});
@@ -606,7 +623,7 @@ async function loadHistory(){
     const paidDate=c.unit_paid_date?new Date(c.unit_paid_date).toLocaleDateString('he-IL'):'';
     const statusHtml=c.unit_paid
       ?`<div class="chip-paid"><svg viewBox="0 0 12 12" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>היחידה שילמה${paidDate?' · '+paidDate:''}</div>`
-      :`<div class="pending-block"><div><div class="pending-title">ממתין לתשלום מהיחידה</div><div class="pending-sub">${f(tu)} טרם התקבלו</div></div><button class="pending-action" onclick="markHistPaid('${c.id}',this)">שולם</button></div>`;
+      :`<div class="pending-block"><div><div class="pending-title">ממתין לתשלום מהיחידה</div><div class="pending-sub">${f(tu)} טרם התקבלו</div></div><div style="display:flex;gap:6px;align-items:center;"><button class="send-btn" onclick="sendSummary(${c.cycle_month},${c.cycle_year},${eu},${vu},${au})">שלח סיכום</button><button class="pending-action" onclick="markHistPaid('${c.id}',this)">שולם</button></div></div>`;
     html+=`<div class="hcard" style="margin-bottom:10px;">
       <div class="hcard-top"><div class="hperiod">${p}</div></div>
       <div class="hgrid">
