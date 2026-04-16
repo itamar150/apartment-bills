@@ -72,3 +72,5 @@ alter table electricity_readings add constraint unique_elec_cycle unique (cycle_
 alter table vaad_bills add constraint unique_vaad_cycle_bill unique (cycle_month, cycle_year, bill_month, bill_year);
 alter table arnona_bills add constraint unique_arnona_cycle unique (cycle_month, cycle_year);
 -- cycles כבר מוגדר עם unique(cycle_month, cycle_year) בהגדרת הטבלה למעלה
+
+
