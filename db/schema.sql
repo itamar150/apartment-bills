@@ -1,3 +1,15 @@
+-- ניקוי policies ופונקציות ישנים (למניעת שגיאות profiles)
+drop policy if exists "Users can view own profile" on electricity_readings;
+drop policy if exists "Users can view own profile" on vaad_bills;
+drop policy if exists "Users can view own profile" on arnona_bills;
+drop policy if exists "Users can view own profile" on cycles;
+drop policy if exists "allow all" on electricity_readings;
+drop policy if exists "allow all" on vaad_bills;
+drop policy if exists "allow all" on arnona_bills;
+drop policy if exists "allow all" on cycles;
+drop function if exists get_couple_id() cascade;
+drop function if exists auth_user_couple_id() cascade;
+
 -- טבלת קריאות חשמל
 create table electricity_readings (
   id uuid default gen_random_uuid() primary key,

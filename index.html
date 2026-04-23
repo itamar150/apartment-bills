@@ -192,8 +192,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M9 2L4 9h5l-2 5 7-8H9l2-4z"/></svg></div>
           <div><div class="bn">חשמל</div><div class="bs">דו-חודשי</div></div>
         </div>
-        <button class="pill open" id="pill-elec" onclick="togglePaid('elec')">
-          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם
+        <button class="pill open" id="pill-elec" onclick="togglePaid('elec')">שולם
         </button>
       </div>
       <div class="bc-body">
@@ -218,8 +217,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M1 15h14"/><path d="M2 15V7l4-4 4 4v8"/><path d="M10 15V9h4v6"/><rect x="5" y="11" width="2" height="4"/></svg></div>
           <div><div class="bn">ועד מקומי צופים</div><div class="bs" id="sub-v1"></div></div>
         </div>
-        <button class="pill open" id="pill-v1" onclick="togglePaid('v1')">
-          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם
+        <button class="pill open" id="pill-v1" onclick="togglePaid('v1')">שולם
         </button>
       </div>
       <div class="bc-body">
@@ -245,9 +243,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M1 15h14"/><path d="M2 15V7l4-4 4 4v8"/><path d="M10 15V9h4v6"/><rect x="5" y="11" width="2" height="4"/></svg></div>
           <div><div class="bn">ועד מקומי צופים</div><div class="bs" id="sub-v2"></div></div>
         </div>
-        <button class="pill open" id="pill-v2" onclick="togglePaid('v2')">
-          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם
-        </button>
+        <button class="pill open" id="pill-v2" onclick="togglePaid('v2')">שולם</button>
       </div>
       <div class="bc-body">
         <div class="two">
@@ -272,9 +268,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M4 7V5h8v2"/><path d="M8 2v3"/><path d="M5 2h6"/><rect x="6" y="10" width="4" height="5"/></svg></div>
           <div><div class="bn">ארנונה וביוב</div><div class="bs">דו-חודשי</div></div>
         </div>
-        <button class="pill open" id="pill-ar" onclick="togglePaid('ar')">
-          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם
-        </button>
+        <button class="pill open" id="pill-ar" onclick="togglePaid('ar')">שולם</button>
       </div>
       <div class="bc-body">
         <div class="two">
@@ -291,6 +285,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
     </div>
 
     <div class="sec-lbl">סיכום חשבון</div>
+    <!-- <div style="text-align:center;margin-bottom:-4px;">
+      <button class="send-btn" onclick="sendSummary(csm,csy,euV,v1uV+v2uV,aruV)" style="font-size:11px;padding:5px 14px;opacity:0.7;">🧪 שלח סיכום דמה</button>
+    </div> -->
     <div class="sum">
       <div class="sum-head" onclick="toggleSummary()">
         <div style="display:flex;align-items:center;gap:10px;">
@@ -365,6 +362,7 @@ function m2n(m,y){const m2=(m+1)%12,y2=m===11?y+1:y;return HM[m2]+' '+y2;}
 function f(n){return '₪ '+parseFloat(n||0).toFixed(2);}
 const ZERO='₪ 0.00';
 function ph(){return '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>שולם';}
+function phOpen(){return 'שולם';}
 
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -443,12 +441,12 @@ async function togglePaid(k){
       await saveBill(k);
     } catch(err){
       paid[k]=false;
-      pill.className='pill open';pill.innerHTML=ph();
+      pill.className='pill open';pill.innerHTML=phOpen();
       card.classList.remove('done');
       if(dot)dot.className='dot x';
     }
   } else {
-    pill.className='pill open';pill.innerHTML=ph();
+    pill.className='pill open';pill.innerHTML=phOpen();
     card.classList.remove('done');
     if(dot)dot.className='dot x';
   }
@@ -558,7 +556,7 @@ async function loadPrevReading(){
     .limit(1);
   if(data&&data.length>0){
     prevReading=data[0].current_reading;
-    document.getElementById('prev-hint').textContent='קריאה קודמת: '+prevReading+' קוט"ש';
+    document.getElementById('prev-hint').textContent='קריאה קודמת: '+parseFloat(parseFloat(prevReading).toFixed(2))+' קוט"ש';
   } else {
     prevReading=76007.5;
     document.getElementById('prev-hint').textContent='קריאה קודמת: 76007.5 קוט"ש';
@@ -695,7 +693,7 @@ function ce(){
   const c=parseFloat(document.getElementById('mc').value),b=parseFloat(document.getElementById('eb').value);
   if(!isNaN(c)&&c>prevReading){
     const d=c-prevReading;euV=30+d*0.6402;
-    document.getElementById('kwh').textContent=d+' קוט"ש';
+    document.getElementById('kwh').textContent=parseFloat(d.toFixed(2))+' קוט"ש';
     document.getElementById('eu').textContent=f(euV);
     emV=!isNaN(b)?Math.max(0,b-euV):0;
     document.getElementById('em').textContent=!isNaN(b)?f(emV):'–';
