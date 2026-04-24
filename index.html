@@ -215,7 +215,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
       <div class="bc-head">
         <div class="bc-left">
           <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M1 15h14"/><path d="M2 15V7l4-4 4 4v8"/><path d="M10 15V9h4v6"/><rect x="5" y="11" width="2" height="4"/></svg></div>
-          <div><div class="bn">ועד מקומי צופים</div><div class="bs" id="sub-v1"></div></div>
+          <div><div class="bn">ועד צופים</div><div class="bs" id="sub-v1"></div></div>
         </div>
         <button class="pill open" id="pill-v1" onclick="togglePaid('v1')">שולם
         </button>
@@ -241,7 +241,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
       <div class="bc-head">
         <div class="bc-left">
           <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M1 15h14"/><path d="M2 15V7l4-4 4 4v8"/><path d="M10 15V9h4v6"/><rect x="5" y="11" width="2" height="4"/></svg></div>
-          <div><div class="bn">ועד מקומי צופים</div><div class="bs" id="sub-v2"></div></div>
+          <div><div class="bn">ועד צופים</div><div class="bs" id="sub-v2"></div></div>
         </div>
         <button class="pill open" id="pill-v2" onclick="togglePaid('v2')">שולם</button>
       </div>
@@ -305,9 +305,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
         <div class="pb u">
           <div class="pb-head"><span class="pb-lbl">תשלום מהיחידה</span><span class="pb-amt" id="pbu">₪ 0.00</span></div>
           <div class="pbr">
-            <div class="pbrow"><span>חשמל</span><span id="pu-e">₪ 0.00</span></div>
-            <div class="pbrow"><span>ועד צופים (×2)</span><span id="pu-v">₪ 0.00</span></div>
-            <div class="pbrow"><span>ארנונה וביוב</span><span id="pu-a">₪ 0.00</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-u-elec"></span>חשמל</div><span id="pu-e">₪ 0.00</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-u-v"></span>ועד צופים (×2)</div><span id="pu-v">₪ 0.00</span></div>
+            <div class="pbrow"><div class="rl"><span class="dot x" id="d-u-ar"></span>ארנונה וביוב</div><span id="pu-a">₪ 0.00</span></div>
           </div>
         </div>
         <div class="pb mine">
@@ -398,6 +398,9 @@ function lockCard(k){
   const pill=document.getElementById('pill-'+k);
   pill.className='pill locked';
   pill.onclick=null;
+  if(k==='elec'){const d=document.getElementById('d-u-elec');if(d)d.className='dot g';}
+  if(k==='ar'){const d=document.getElementById('d-u-ar');if(d)d.className='dot g';}
+  if(k==='v1'||k==='v2'){const d=document.getElementById('d-u-v');if(d)d.className='dot g';}
 }
 
 function hasData(k){
@@ -589,10 +592,10 @@ function sendSummary(month,year,elec,vaad,arnona){
   if(!MAKE_WEBHOOK_URL){showToast('יש להגדיר MAKE_WEBHOOK_URL');return;}
   const payload={
     period:per(month,year),
-    unit_total:parseFloat((elec+vaad+arnona).toFixed(2)),
-    electricity:parseFloat(elec.toFixed(2)),
-    vaad:parseFloat(vaad.toFixed(2)),
-    arnona:parseFloat(arnona.toFixed(2))
+    unit_total:Math.round(elec+vaad+arnona),
+    electricity:Math.round(elec),
+    vaad:Math.round(vaad),
+    arnona:Math.round(arnona)
   };
   fetch(MAKE_WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .then(r=>showToast(r.ok?'סיכום נשלח ✓':'שגיאה בשליחה'))
@@ -630,9 +633,9 @@ async function loadHistory(){
           <div class="hpane-label">היחידה</div>
           <div class="hpane-amount">${f(tu)}</div>
           <div class="hrows">
-            <div class="hrow"><span>חשמל</span><span>${eu>0?f(eu):'–'}</span></div>
-            <div class="hrow"><span>ועד ×2</span><span>${vu>0?f(vu):'–'}</span></div>
-            <div class="hrow"><span>ארנונה</span><span>${au>0?f(au):'–'}</span></div>
+            <div class="hrow"><div class="rl"><span class="dot ${c.unit_paid?'g':'x'}"></span>חשמל</div><span>${eu>0?f(eu):'–'}</span></div>
+            <div class="hrow"><div class="rl"><span class="dot ${c.unit_paid?'g':'x'}"></span>ועד צופים ×2</div><span>${vu>0?f(vu):'–'}</span></div>
+            <div class="hrow"><div class="rl"><span class="dot ${c.unit_paid?'g':'x'}"></span>ארנונה</div><span>${au>0?f(au):'–'}</span></div>
           </div>
         </div>
         <div class="hpane mine">
@@ -640,7 +643,7 @@ async function loadHistory(){
           <div class="hpane-amount">${f(tm)}</div>
           <div class="hrows">
             <div class="hrow"><div class="rl"><span class="dot g"></span>חשמל</div><span>${em>0?f(em):'–'}</span></div>
-            <div class="hrow"><div class="rl"><span class="dot g"></span>ועד 1+2</div><span>${vm>0?f(vm):'–'}</span></div>
+            <div class="hrow"><div class="rl"><span class="dot g"></span>ועד צופים ×2</div><span>${vm>0?f(vm):'–'}</span></div>
             <div class="hrow"><div class="rl"><span class="dot g"></span>ארנונה</div><span>${am>0?f(am):'–'}</span></div>
           </div>
         </div>
@@ -670,6 +673,7 @@ function resetEntry(){
   ['mc','eb','v1s','v1m','v1a','v1b','v2s','v2m','v2a','v2b','aa','ab'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['kwh','eu','em','v1t','v1u','v1mi','v2t','v2u','v2mi','art','aru','arm','pu-e','pu-v','pu-a','pm-e','pm-v1','pm-v2','pm-a'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ZERO;});
   ['stu','stm','pbu','pbm'].forEach(id=>document.getElementById(id).textContent=ZERO);
+  ['d-u-elec','d-u-v','d-u-ar'].forEach(id=>{const d=document.getElementById(id);if(d)d.className='dot x';});
 
 }
 
