@@ -140,6 +140,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
 .send-btn:active{background:#e8f5ec;}
 .empty-state{text-align:center;padding:48px 20px;color:#9abfaa;font-size:14px;}
 
+/* dashboard */
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.kpi-card{background:#fff;border-radius:14px;border:0.5px solid #c8e6cc;padding:12px 8px;text-align:center;}
+.kpi-val{font-size:18px;font-weight:700;color:#1a5c35;margin-bottom:2px;}
+.kpi-lbl{font-size:10px;color:#5a8a6a;font-weight:500;line-height:1.3;}
+.chart-wrap{background:#fff;border-radius:14px;border:0.5px solid #c8e6cc;padding:14px;margin-bottom:12px;}
+.chart-title{font-size:10px;color:#5a8a6a;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;}
+.cat-bar-wrap{background:#fff;border-radius:14px;border:0.5px solid #c8e6cc;padding:14px;margin-bottom:12px;}
+.cat-bar-track{height:10px;border-radius:5px;overflow:hidden;display:flex;direction:ltr;margin:8px 0 10px;}
+.cat-legend{display:flex;gap:12px;flex-wrap:wrap;}
+.cat-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#555;}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dash-section-lbl{font-size:10px;color:#5a8a6a;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:8px;margin-top:4px;}
+
 /* loading */
 .loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#5a8a6a;font-size:14px;}
 
@@ -217,8 +231,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;directio
           <div class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2d8a52" stroke-width="1.5"><path d="M1 15h14"/><path d="M2 15V7l4-4 4 4v8"/><path d="M10 15V9h4v6"/><rect x="5" y="11" width="2" height="4"/></svg></div>
           <div><div class="bn">ועד צופים</div><div class="bs" id="sub-v1"></div></div>
         </div>
-        <button class="pill open" id="pill-v1" onclick="togglePaid('v1')">שולם
-        </button>
+        <button class="pill open" id="pill-v1" onclick="togglePaid('v1')">שולם</button>
       </div>
       <div class="bc-body">
         <div class="two">
@@ -373,7 +386,6 @@ function showToast(msg){
 function updateLabels(){
   const m=csm,y=csy,p=per(m,y);
   document.getElementById('topbar-period').textContent=p;
-  
   document.getElementById('lbl-v1').textContent='ועד צופים — '+m1n(m,y);
   document.getElementById('lbl-v2').textContent='ועד צופים — '+m2n(m,y);
   document.getElementById('sub-v1').textContent='חד-חודשי';
@@ -604,13 +616,9 @@ function sendSummary(month,year,elec,vaad,arnona){
 
 async function loadHistory(){
   document.getElementById('hist-list').innerHTML='<div class="loading">טוען...</div>';
-  const {data:cycles}=await sb.from('cycles').select('*').order('created_at',{ascending:false});
-  if(!cycles||cycles.length===0){
-    document.getElementById('hist-list').innerHTML='<div class="empty-state">אין סבבים עדיין — הזן חשבוניות וסמן הכל כשולם</div>';
-    return;
-  }
-  let html='';
-  for(const c of cycles){
+  const {data:realCycles}=await sb.from('cycles').select('*').order('created_at',{ascending:false});
+  const entries=[];
+  for(const c of (realCycles||[])){
     const {data:elec}=await sb.from('electricity_readings').select('*').eq('cycle_month',c.cycle_month).eq('cycle_year',c.cycle_year).single();
     const {data:vaads}=await sb.from('vaad_bills').select('*').eq('cycle_month',c.cycle_month).eq('cycle_year',c.cycle_year);
     const {data:ar}=await sb.from('arnona_bills').select('*').eq('cycle_month',c.cycle_month).eq('cycle_year',c.cycle_year).single();
@@ -620,38 +628,82 @@ async function loadHistory(){
     const em=elec?parseFloat(elec.mine_amount)||0:0;
     const vm=(vaads||[]).reduce((s,v)=>s+(parseFloat(v.mine_amount)||0),0);
     const am=ar?parseFloat(ar.mine_amount)||0:0;
-    const tu=eu+vu+au, tm=em+vm+am;
+    const wv=(vaads||[]).reduce((s,v)=>s+(parseFloat(v.mayim_a||0)+parseFloat(v.mayim_b||0))/2,0);
+    const wa=ar?parseFloat(ar.biyuv_amount||0)/2:0;
+    const wm=wv+wa;
+    const om=(vm-wv)+(am-wa);
+    entries.push({c,eu,vu,au,em,vm,am,vaads:vaads||[]});
+  }
+  if(entries.length===0){
+    document.getElementById('hist-list').innerHTML='<div class="empty-state">אין סבבים עדיין — הזן חשבוניות וסמן הכל כשולם</div>';
+    return;
+  }
+  const totalFromUnit=entries.filter(e=>e.c.unit_paid).reduce((s,e)=>s+e.eu+e.vu+e.au,0);
+  const totalMine=entries.reduce((s,e)=>s+e.em+e.vm+e.am,0);
+  const kpiHtml=`<div class="dash-kpi-grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px;">
+    <div class="kpi-card"><div class="kpi-val">₪${Math.round(totalFromUnit).toLocaleString()}</div><div class="kpi-lbl">התקבל מהיחידה</div></div>
+    <div class="kpi-card"><div class="kpi-val">₪${Math.round(totalMine).toLocaleString()}</div><div class="kpi-lbl">הוצאות הבית שלי</div></div>
+  </div>`;
+  // Cards
+  let cardsHtml='';
+  for(const e of entries){
+    const {c,eu,vu,au,em,vm,am,vaads}=e;
+    const tu=eu+vu+au,tm=em+vm+am;
     const p=per(c.cycle_month,c.cycle_year);
+    const cid=`${c.cycle_month}-${c.cycle_year}`;
+    const dot=c.unit_paid?'g':'x';
+    const sv=[...(vaads||[])].sort((a,b)=>a.bill_month-b.bill_month);
+    const vaadDetailU=sv.length?sv.map(v=>`<div class="hrow" style="font-size:9px;padding-right:26px;"><span>${HM[v.bill_month]} ${v.bill_year}</span><span>${f(v.unit_amount)}</span></div>`).join(''):'';
+    const vaadDetailM=sv.length?sv.map(v=>`<div class="hrow" style="font-size:9px;padding-right:26px;"><span>${HM[v.bill_month]} ${v.bill_year}</span><span>${f(v.mine_amount)}</span></div>`).join(''):'';
+    const sp=`<span style="width:10px;flex-shrink:0;display:inline-block;"></span>`;
+    const chevBox=(sid)=>`<span id="hvc-${sid}" style="width:10px;height:10px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.2s;"><svg viewBox="0 0 10 10" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:9px;"><path d="M2 3.5l3 3 3-3"/></svg></span>`;
     const paidDate=c.unit_paid_date?new Date(c.unit_paid_date).toLocaleDateString('he-IL'):'';
     const statusHtml=c.unit_paid
       ?`<div class="chip-paid"><svg viewBox="0 0 12 12" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>היחידה שילמה${paidDate?' · '+paidDate:''}</div>`
       :`<div class="pending-block"><div><div class="pending-title">ממתין לתשלום מהיחידה</div><div class="pending-sub">${f(tu)} טרם התקבלו</div></div><div style="display:flex;gap:6px;align-items:center;"><button class="send-btn" onclick="sendSummary(${c.cycle_month},${c.cycle_year},${eu},${vu},${au})">שלח סיכום</button><button class="pending-action" onclick="markHistPaid('${c.id}',this)">שולם</button></div></div>`;
-    html+=`<div class="hcard" style="margin-bottom:10px;">
+    cardsHtml+=`<div class="hcard" style="margin-bottom:10px;">
       <div class="hcard-top"><div class="hperiod">${p}</div></div>
       <div class="hgrid">
         <div class="hpane unit">
           <div class="hpane-label">היחידה</div>
           <div class="hpane-amount">${f(tu)}</div>
           <div class="hrows">
-            <div class="hrow"><div class="rl"><span class="dot ${c.unit_paid?'g':'x'}"></span>חשמל</div><span>${eu>0?f(eu):'–'}</span></div>
-            <div class="hrow"><div class="rl"><span class="dot ${c.unit_paid?'g':'x'}"></span>ועד צופים ×2</div><span>${vu>0?f(vu):'–'}</span></div>
-            <div class="hrow"><div class="rl"><span class="dot ${c.unit_paid?'g':'x'}"></span>ארנונה</div><span>${au>0?f(au):'–'}</span></div>
+            <div class="hrow"><div class="rl">${sp}<span class="dot ${dot}"></span>חשמל</div><span>${eu>0?f(eu):'–'}</span></div>
+            <div class="hrow" style="cursor:${sv.length?'pointer':'default'}" onclick="${sv.length?`toggleHVaad('u-${cid}')`:''}" >
+              <div class="rl">${sv.length?chevBox('u-'+cid):sp}<span class="dot ${dot}"></span>ועד צופים ×2</div>
+              <span>${vu>0?f(vu):'–'}</span>
+            </div>
+            ${vaadDetailU?`<div id="hvaad-u-${cid}" style="display:none;">${vaadDetailU}</div>`:''}
+            <div class="hrow"><div class="rl">${sp}<span class="dot ${dot}"></span>ארנונה</div><span>${au>0?f(au):'–'}</span></div>
           </div>
         </div>
         <div class="hpane mine">
           <div class="hpane-label">הבית שלי</div>
           <div class="hpane-amount">${f(tm)}</div>
           <div class="hrows">
-            <div class="hrow"><div class="rl"><span class="dot g"></span>חשמל</div><span>${em>0?f(em):'–'}</span></div>
-            <div class="hrow"><div class="rl"><span class="dot g"></span>ועד צופים ×2</div><span>${vm>0?f(vm):'–'}</span></div>
-            <div class="hrow"><div class="rl"><span class="dot g"></span>ארנונה</div><span>${am>0?f(am):'–'}</span></div>
+            <div class="hrow"><div class="rl">${sp}<span class="dot g"></span>חשמל</div><span>${em>0?f(em):'–'}</span></div>
+            <div class="hrow" style="cursor:${sv.length?'pointer':'default'}" onclick="${sv.length?`toggleHVaad('m-${cid}')`:''}" >
+              <div class="rl">${sv.length?chevBox('m-'+cid):sp}<span class="dot g"></span>ועד צופים ×2</div>
+              <span>${vm>0?f(vm):'–'}</span>
+            </div>
+            ${vaadDetailM?`<div id="hvaad-m-${cid}" style="display:none;">${vaadDetailM}</div>`:''}
+            <div class="hrow"><div class="rl">${sp}<span class="dot g"></span>ארנונה</div><span>${am>0?f(am):'–'}</span></div>
           </div>
         </div>
       </div>
       <div class="status-row">${statusHtml}</div>
     </div>`;
   }
-  document.getElementById('hist-list').innerHTML=html;
+  document.getElementById('hist-list').innerHTML=kpiHtml+cardsHtml;
+}
+
+function toggleHVaad(sid){
+  const el=document.getElementById('hvaad-'+sid);
+  const chv=document.getElementById('hvc-'+sid);
+  if(!el)return;
+  const open=el.style.display==='none'||!el.style.display;
+  el.style.display=open?'block':'none';
+  if(chv)chv.style.transform=open?'rotate(180deg)':'rotate(0deg)';
 }
 
 async function markHistPaid(cycleId,btn){
@@ -674,7 +726,6 @@ function resetEntry(){
   ['kwh','eu','em','v1t','v1u','v1mi','v2t','v2u','v2mi','art','aru','arm','pu-e','pu-v','pu-a','pm-e','pm-v1','pm-v2','pm-a'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ZERO;});
   ['stu','stm','pbu','pbm'].forEach(id=>document.getElementById(id).textContent=ZERO);
   ['d-u-elec','d-u-v','d-u-ar'].forEach(id=>{const d=document.getElementById(id);if(d)d.className='dot x';});
-
 }
 
 function us(){
